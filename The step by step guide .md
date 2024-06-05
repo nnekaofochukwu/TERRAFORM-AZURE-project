@@ -1,40 +1,96 @@
 # A step by step guide
 
-# set up your providers.tf file - The provider.tf file in Terraform is where you declare the providers that a Terraform configuration requires. 
+set up your providers.tf file - The provider.tf file in Terraform is where you declare the providers that a Terraform configuration requires. 
 These providers are plugins that Terraform uses to manage resources, and each provider adds a set of data sources and resource types that Terraform can manage. 
 Without providers, Terraform can't manage infrastructure.
 
-# set up your main.tf file - the main.tf file is the primary configuration file that contains the resource blocks that define the resources to be created in the target cloud platform. 
+set up your main.tf file - the main.tf file is the primary configuration file that contains the resource blocks that define the resources to be created in the target cloud platform. 
 It's the primary entrypoint for a module, and for a simple module, it may be where all the resources are created.
 
-# set up your variables.tf file - for the declaration of variables, name, type, description, default values and additional meta data. 
+set up your variables.tf file - for the declaration of variables, name, type, description, default values and additional meta data. 
 let you customize aspects of Terraform modules without altering the module's own source code. 
 This functionality allows you to share modules across different Terraform configurations, making your module composable and reusable
 
-# set up you terraform.tfvars file - allows you to define variable files called *. tfvars to create a reusable file for all the variables for a project.
+set up you terraform.tfvars file - allows you to define variable files called *. tfvars to create a reusable file for all the variables for a project.
 
-# set up your service principal by registering an application (adding an application) under microsoft entra ID.
+# Create an Azure AD Application (Service Principal)
+Sign in to the Azure Portal:
+
+Navigate to the Azure Portal at portal.azure.com.
+
+Register a New Application:
+In the left-hand menu, select "Azure Active Directory."
+Under "Manage," click on "App registrations."
+Click the "New registration" button.
+Provide a name for the application (e.g., "Terraform Service Principal").
+Choose the supported account types (usually "Accounts in this organizational directory only" for single tenant).
+Click "Register." 
+add your main user as the owner of the application you just registered..you wll find the details on the left side of the page.
+create a group in the groups page and add your main user as the owner .
+add your main user and the registered application/ service principal to the group
+make the main user the owner of your group so that the whole group can inherit its permissions too.
+go to the IAM page found under your subscriptions page and assign your main user (who is the group owner) owner priviledged administrator roles
+
+# Create a Client Secret:
+After the application is registered, navigate to the "Certificates & secrets" section.
+Click "New client secret."
+Add a description (e.g., "Terraform secret") and choose an expiry period.
+Click "Add."
+Copy the client secret value immediately and store it securely. You will need this later and won't be able to view it again.
+Get the Client ID and Tenant ID:
+
+Go to the "Overview" section of your app registration.
+Copy the "Application (client) ID" (Client ID) and "Directory (tenant) ID" (Tenant ID).
+
+# Assign Permissions to the Service Principal
+Navigate to the Subscription:
+
+In the left-hand menu, click on "Subscriptions."
+Select the subscription you want to use with Terraform.
+Assign a Role:
+
+Click on "Access control (IAM)" in the subscription menu.
+Click "Add" and then "Add role assignment."
+Choose the appropriate role for your Terraform operations (typically "Owner or Contributor" for full access or a more restricted role if needed).
+Click "Next."
+Under "Assign access to," select "User, group, or service principal."
+Search for the name of your registered application.
+Select the application and click "Save."
+
+# Configure Terraform with the Service Principal
+In your Terraform configuration, you will use the client ID, client secret, tenant ID, and subscription ID to authenticate.
+
+Here is an example of how to configure the provider in your Terraform code:
+
+hcl
+Copy code
+provider "azurerm" {
+  features {}
+
+  subscription_id = "your_subscription_id"
+  client_id       = "your_client_id"
+  client_secret   = "your_client_secret"
+  tenant_id       = "your_tenant_id"
+}
+Replace the placeholders (your_subscription_id, your_client_id, your_client_secret, your_tenant_id) with the actual values you obtained from the Azure Portal.
+
+# Summary of Required Information:
+Client ID: Application (client) ID from Azure AD application registration.
+Client Secret: The secret you created and copied.
+Tenant ID: Directory (tenant) ID from Azure AD application registration.
+Subscription ID: The ID of the subscription you are working with.
+
+and save them in your configured terraform.tfvars file (also remember to set up their variable blocks in the variable.tf file)
+By following these steps, you will have successfully created an access key and secret for use with Terraform on Azure. Ensure that you store the secret securely and follow best practices for managing credentials. 
+
+set up your service principal by registering an application (adding an application) under microsoft entra ID.
 also do create your client secrets ID and copy and save it in another document IMMEDIATELY before leaving the page.
-
-# add your main user as the owner of the application you just registered..you wll find the details on the left side of the page.
-# create a group in the groups page and add your main user as the owner .
-# add your main user and the registered application/ service principal to the group
-# go to the IAM page found under your subscriptions page and assign your main user (who is the group owner) owner priviledged administrator roles
-# so that the whole group can inherit the permissions too.
-
-# copy the client secrets ID (ONLY COPIED IMMEDIATELY AFTER THE CREATION OF A SECRETS from the certificate and secrets page )
-# copy the client ID ( from the certificate and secrets page)
-# copy the subscription ID (from the azure subscriptions page)
-# copy the tenant ID ( from the microsoft entra ID page)
-# and save them in your configured terraform.tfvars file (also remember to set up their variable blocks in the variable.tf file)
 
 # connect your pc to your azure account - download and install AZURE CLI for your pc and to verify it is working 
 # run - az login
 and follow its instructions to connect your pc to your azure account/console.
 
-
 after setting up your files and inputing all the data needed then run the following commands -
-
 
 # Initialize Terraform: Run - terraform init in your project directory to initialize Terraform and download any necessary plugins.
 
